@@ -3,10 +3,9 @@
 import axios from 'axios';
 import * as z from 'zod';
 import qs from 'query-string';
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ChannelType } from '@prisma/client';
 
 import {
@@ -35,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useEffect } from 'react';
 
 const formScheme = z.object({
   name: z
@@ -46,41 +46,41 @@ const formScheme = z.object({
   type: z.nativeEnum(ChannelType),
 });
 
-export const CreateChannelModal = () => {
+export const EditChannelModal = () => {
   const { isOpen, onClose, type, data } = useModal();
   const router = useRouter();
-  const params = useParams();
 
-  const isModalOpen = isOpen && type === 'createChannel';
-  const { channelType } = data;
+  const isModalOpen = isOpen && type === 'editChannel';
+  const { channel, server } = data;
 
   const form = useForm({
     resolver: zodResolver(formScheme),
     defaultValues: {
       name: '',
-      type: channelType || ChannelType.TEXT,
+      type: channel?.type || ChannelType.TEXT,
     },
   });
 
   useEffect(() => {
-    if (channelType) {
-      form.setValue('type', channelType);
+    if (channel) {
+      form.setValue('name', channel.name);
+      form.setValue('type', channel.type);
     } else {
       form.setValue('type', ChannelType.TEXT);
     }
-  }, [channelType, form]);
+  }, [form, channel]);
 
   const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (values: z.infer<typeof formScheme>) => {
     try {
       const url = qs.stringifyUrl({
-        url: '/api/channels',
+        url: `/api/channels/${channel?.id}`,
         query: {
-          serverId: params?.serverId,
+          serverId: server?.id,
         },
       });
-      await axios.post(url, values);
+      await axios.patch(url, values);
 
       form.reset();
       router.refresh();
@@ -99,7 +99,7 @@ export const CreateChannelModal = () => {
     <Dialog open={isModalOpen} onOpenChange={handleClose}>
       <DialogContent className='bg-white text-black p-0 overflow-hidden'>
         <DialogHeader className='pt-8 px-6'>
-          <DialogTitle className='text-2xl text-center font-bold'>Create Channel</DialogTitle>
+          <DialogTitle className='text-2xl text-center font-bold'>Edit Channel</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -157,7 +157,7 @@ export const CreateChannelModal = () => {
 
             <DialogFooter className='bg-gray-100 px-6 py-4'>
               <Button disabled={isLoading} variant='primary'>
-                Create
+                Save
               </Button>
             </DialogFooter>
           </form>
