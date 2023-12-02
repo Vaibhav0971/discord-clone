@@ -12,5 +12,6 @@
         "trailingComma": "es5"
       }
     ]
-  }
+  },
+  "ignorePatterns": ["/components/ui/**"]
 }
